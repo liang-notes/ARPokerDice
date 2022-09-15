@@ -9,7 +9,10 @@ import UIKit
 import SceneKit
 import ARKit
 
-class ViewController: UIViewController, ARSCNViewDelegate {
+class ViewController: UIViewController {
+    
+    // MARK: - Properties
+    var trackingStatus: String = ""
 
     // MARK: -- Outlets
     @IBOutlet weak var resetButton: UIButton!
@@ -28,22 +31,19 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     // MARK: - View Management
     override func viewDidLoad() {
         super.viewDidLoad()
-        statusLabel.text = "Greetings! :]"
-        sceneView.delegate = self
-        sceneView.showsStatistics = true
-        let scene = SCNScene(named: "PockerDice.scnassets/SimpleScene.scn")!
-        sceneView.scene = scene
+        initSceneView()
+        initScene()
+        initARSession()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        let configuration = ARWorldTrackingConfiguration()
-        sceneView.session.run(configuration)
+        print("*** viewWillAppear")
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        sceneView.session.pause()
+        print("*** viewWillDisappear")
     }
     
     override var prefersStatusBarHidden: Bool {
@@ -52,7 +52,20 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     // MARK: - Initialization
     func initSceneView() {
-        
+        sceneView.delegate = self
+        sceneView.showsStatistics = true
+        sceneView.debugOptions = [
+            SCNDebugOptions.showFeaturePoints,
+            SCNDebugOptions.showWorldOrigin,
+            SCNDebugOptions.showBoundingBoxes,
+            SCNDebugOptions.showWireframe
+        ]
+    }
+    
+    func initScene() {
+        let scene = SCNScene(named: "PockerDice.scnassets/SimpleScene.scn")!
+        scene.isPaused = false
+        sceneView.scene = scene
     }
     
     func initARSession() {
@@ -63,35 +76,56 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         let config = ARWorldTrackingConfiguration()
         config.worldAlignment = .gravity
         config.providesAudioData = false
+        sceneView.session.run(config)
     }
     
-    func initScene() {
-        
-    }
+}
 
-    // MARK: - ARSCNViewDelegate
-    
-/*
-    // Override to create and configure nodes for anchors added to the view's session.
-    func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
-        let node = SCNNode()
-     
-        return node
+extension ViewController: ARSCNViewDelegate {
+    // MARK: - SceneKit Management
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        DispatchQueue.main.async {
+            self.statusLabel.text = self.trackingStatus
+        }
     }
-*/
     
+    // MARK: - Session State Management
+    func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
+        switch camera.trackingState {
+        case .notAvailable:
+            trackingStatus = "Tracking: not available"
+            break
+        case .normal:
+            trackingStatus = ""
+            break
+        case .limited(let reason):
+            switch reason {
+            case .initializing:
+                trackingStatus = "Tracking: initializing"
+            case .excessiveMotion:
+                trackingStatus = "Tracking: limited due to excessive motion"
+            case .insufficientFeatures:
+                trackingStatus = "Tracking: limited due to insufficient features"
+            case .relocalizing:
+                trackingStatus = "Tracking: relocalizing"
+            @unknown default:
+                trackingStatus = "Tracking: unknow..."
+            }
+        }
+    }
+    
+    // MARK: - Session Error Managent
     func session(_ session: ARSession, didFailWithError error: Error) {
-        // Present an error message to the user
-        
+        trackingStatus = "AR Session Failure: \(error)"
     }
     
     func sessionWasInterrupted(_ session: ARSession) {
-        // Inform the user that the session has been interrupted, for example, by presenting an overlay
-        
+        trackingStatus = "AR Session was interrupted!"
     }
     
     func sessionInterruptionEnded(_ session: ARSession) {
-        // Reset tracking and/or remove existing anchors if consistent tracking is required
-        
+      trackingStatus = "AR Session Interruption Ended"
     }
+    
+    // MARK: - Plane Management
 }
