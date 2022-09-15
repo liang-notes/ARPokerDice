@@ -11,39 +11,62 @@ import ARKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
 
+    // MARK: -- Outlets
+    @IBOutlet weak var resetButton: UIButton!
+    @IBOutlet weak var styleButton: UIButton!
+    @IBOutlet weak var statusLabel: UILabel!
     @IBOutlet var sceneView: ARSCNView!
     
+    // MARK: - Actions
+    @IBAction func styleButtonPressed(_ sender: Any) {
+    }
+    
+    @IBAction func resetButtonPressed(_ sender: Any) {
+    }
+    
+    
+    // MARK: - View Management
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // Set the view's delegate
+        statusLabel.text = "Greetings! :]"
         sceneView.delegate = self
-        
-        // Show statistics such as fps and timing information
         sceneView.showsStatistics = true
-        
-        // Create a new scene
-        let scene = SCNScene(named: "art.scnassets/ship.scn")!
-        
-        // Set the scene to the view
+        let scene = SCNScene(named: "PockerDice.scnassets/SimpleScene.scn")!
         sceneView.scene = scene
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        // Create a session configuration
         let configuration = ARWorldTrackingConfiguration()
-
-        // Run the view's session
         sceneView.session.run(configuration)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
-        // Pause the view's session
         sceneView.session.pause()
+    }
+    
+    override var prefersStatusBarHidden: Bool {
+        return true
+    }
+    
+    // MARK: - Initialization
+    func initSceneView() {
+        
+    }
+    
+    func initARSession() {
+        guard ARWorldTrackingConfiguration.isSupported else {
+            print("*** ARConfig: AR Word Tracking not supported")
+            return
+        }
+        let config = ARWorldTrackingConfiguration()
+        config.worldAlignment = .gravity
+        config.providesAudioData = false
+    }
+    
+    func initScene() {
+        
     }
 
     // MARK: - ARSCNViewDelegate
